@@ -1,0 +1,10 @@
+.vscode/*
+
+location.hpp
+parser.hpp
+parser.cpp
+scanner.cpp
+parser
+scanner
+
+token*
