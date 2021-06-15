@@ -1,0 +1,13 @@
+$$ the main entry point to the program
+int main()
+<
+    int a = 9.
+    if (a < 10)
+    <
+        a = a * 10. $* OK! *$
+    >
+    while(a < 10)
+    <
+        a = a + 1. $* will never execute *$
+    >
+>

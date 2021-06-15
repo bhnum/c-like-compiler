@@ -1,0 +1,8 @@
+$$ according to the specification, the main() function
+$$ must be the last definition in the file
+int main() <>
+
+$** Sample          *
+*   multiline       *
+*   comment         *$
+int unmain()<> $$ must fail exaclty here on line 8
