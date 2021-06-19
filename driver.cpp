@@ -52,5 +52,5 @@ void Driver::print_error(const yy::parser::location_type& location, const std::s
         std::cerr << std::setw(5) << location.end.line - 1 << " | " << last_line << "\n";
     std::cerr << std::setw(5) << location.end.line << " | " << line << "\n"
         << std::string(5, ' ') << "" << " | " << std::string(begin_column - 1, ' ')
-        << '^' << std::string(location.end.column - begin_column - 1, '~') << std::endl;
+        << '^' << std::string(std::max(0, location.end.column - begin_column - 1), '~') << std::endl;
 }
