@@ -1,3 +1,4 @@
+// output a C++ class instead of C
 %language "c++"
 %require "3.5.1" // minimum version
 %defines
@@ -6,27 +7,32 @@
 %define api.value.type variant
 %define parse.assert
 
+// define the location class for location tracking in the scanner
 %locations
 %define api.location.file "location.hpp"
 
+// debug mode if specified in the command line arguments
 %define parse.trace
 %define parse.error verbose
 %define parse.lac full
 
+// required imports in the header file
 %code requires {
     #include <string>
     class Driver;
 }
 
-// the parsing context.
+// the parsing context to use (the class instance)
 %param { Driver& driver }
 
+// include the driver class in the .cpp file
 %code {
     #include "driver.hpp"
 }
 
 %printer { yyo << $$; } <*>;
 
+// define tokens from the scanner
 %define api.token.prefix {TOKEN_}
 %token
     MINUS           "-"
@@ -76,6 +82,7 @@
     MAIN            "main"
 ;
 
+// specify token types
 %token <std::string> IDENTIFIER "identifier";
 %token <uint32_t> INT_CONST "integer constant";
 %token <char> CHAR_CONST "char constant";
@@ -95,6 +102,7 @@
 %left "+" "-";
 %left "*" "/";
 %precedence UnaryPlus UnaryMinus "!" "~";
+
 
 %%
 Start: DefinitionList;
@@ -244,6 +252,7 @@ Assingment
 
 %%
 
+// redirect errors to Driver's error printing
 void yy::parser::error(const location_type& location, const std::string& message)
 {
     driver.print_error(location, message);

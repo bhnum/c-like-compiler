@@ -24,5 +24,6 @@ public:
 
     int scan();
 
+    // this method is called whenever a syntax error occurs in the parser or in the scanner
     void print_error(const yy::parser::location_type& location, const std::string& message);
 };

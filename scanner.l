@@ -1,6 +1,6 @@
 %option noyywrap nounput noinput batch debug
 
-%{ // C++
+%{
     #include "scanner.hpp"
     #include "driver.hpp"
 
@@ -10,9 +10,10 @@
     #include <cstring> // strerror
     #include <fstream>
 
+    // hold current scanner's configurations
     static Scanner* scanner = nullptr;
     
-    // a number symbol corresponding to the value in str
+    // convert the value in str to an integer constant symbol
     static yy::parser::symbol_type make_INT_CONST(const std::string &str, const yy::parser::location_type& loc)
     {
         try
@@ -27,6 +28,7 @@
     }
 %}
 
+/* define regex rules */
 identifier  [_a-zA-Z][_a-zA-Z0-9]*
 intconst   [0-9]+
 charconst  '.'
@@ -34,19 +36,25 @@ blank       [ \t\r]
 
 %{
     // code run each time a pattern is matched
+
+    // advance location by yyleng
     #define YY_USER_ACTION loc.columns(yyleng);
 %}
 
+/* multiline comment condition */
 %x ml_comment
 
 %%
 %{
+    // code run each time yylex is called
+
+    // the stream to output tokens to
     std::ostream& tokens_out = *scanner->tokens_out;
 
-    // a handy shortcut to the location held by the driver.
+    // a handy shortcut to the location held by the driver
     yy::location& loc = scanner->location;
 
-    // code run each time yylex is called.
+    // set the beginning of the location to the end
     loc.step();
 %}
 
@@ -120,21 +128,26 @@ main        { tokens_out << "TOKEN_MAIN\n";         return yy::parser::make_MAIN
 
 %%
 
-
+// initialize the Scanner instance
 Scanner::Scanner(const std::string& filename, const std::string& tokens_out_filename, bool trace_scanning)
     : filename(filename), tokens_out_filename(tokens_out_filename), trace_scanning(trace_scanning)
 {
+    // filename to print for error reporting
     friendly_filename = filename.empty() ?  "standard input" : filename;
     this->location.initialize(&friendly_filename);
+
+    // hold this instance as the current scanner
     scanner = this;
 
     yy_flex_debug = trace_scanning;
+
+    // set input file for yyin (empty filename means reading from standard input)
     if (filename.empty())
         yyin = stdin;
     else if (!(yyin = fopen(filename.c_str(), "r")))
         throw std::runtime_error("Unable to open file \"" + filename + "\": " + strerror(errno));
 
-
+    // set output file stream (empty tokens_out_filename means not outputing the tokens)
     if (tokens_out_filename.empty())
         this->tokens_out = std::make_shared<NullBuffer>();
     else
@@ -153,6 +166,7 @@ Scanner::Scanner(const std::string& filename, const std::string& tokens_out_file
     }
 }
 
+// destroy this instance and free up resources
 Scanner::~Scanner()
 {
     fclose(yyin);

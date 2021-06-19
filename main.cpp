@@ -2,6 +2,7 @@
 #include <string>
 #include "driver.hpp"
 
+// if _SCAN_ONLY is defined, parsing must be skipped
 #if _SCAN_ONLY
 bool scan_only = true;
 #else
@@ -11,6 +12,8 @@ bool scan_only = false;
 int main(int argc, char* argv[])
 {
     Driver driver;
+
+    // parse input arguments and store the configuration in driver
     for (int i = 1; i < argc; i++)
     {
         // show help
@@ -54,28 +57,37 @@ int main(int argc, char* argv[])
             driver.input_filename = argv[i];
     }
 
+    // only scan, skip parsing if _SCAN_ONLY is defined
     if (scan_only)
     {
+        // driver.scan() can throw exeptions such as file not found
         try
         {
-            driver.scan();
-            return EXIT_SUCCESS;
+            // if result is not 0, the scanner has encountered an error
+            int result = driver.scan();
+            if (result != 0)
+                return EXIT_FAILURE;
         }
         catch (const std::exception& ex)
         {
+            // print error and return
             std::cerr << ex.what() << std::endl;
             return EXIT_FAILURE;
         }
+        return EXIT_SUCCESS;
     }
 
+    // driver.parse() can throw exeptions such as file not found
     try
     {
+        // if result is not 0, the parser has encountered an error
         int result = driver.parse();
         if (result != 0)
             return EXIT_FAILURE;
     }
     catch (const std::exception& ex)
     {
+        // print error and return
         std::cerr << ex.what() << std::endl;
         return EXIT_FAILURE;
     }
