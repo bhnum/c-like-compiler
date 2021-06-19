@@ -8,3 +8,7 @@ parser
 scanner
 
 token*
+
+*.tmp
+*.docx
+*.pdf
