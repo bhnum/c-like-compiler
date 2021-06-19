@@ -10,6 +10,7 @@ int fib(int a)
 >
 
 char str[23 * 6].
+int gbar[34], ghat = 6, gprime, gsecond = gprime.
 
 void strcpy(char dest[], char src[], int length)
 <
