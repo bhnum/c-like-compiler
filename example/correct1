@@ -1,4 +1,3 @@
-$$ the main entry point to the program
 int main()
 <
     int a = 9.
