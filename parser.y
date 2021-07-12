@@ -108,7 +108,7 @@
 Start: DefinitionList;
 
 DefinitionList: MainDefinition
-    | Definition DefinitionList
+    | DefinitionList Definition
     ;
 
 Definition
@@ -128,7 +128,7 @@ TypeSpecifier: INT | CHAR;
 
 ParameterList: %empty
     | ParameterDeclaration
-    | ParameterDeclaration "," ParameterList
+    | ParameterList "," ParameterDeclaration
     ;
 
 ParameterDeclaration
@@ -139,7 +139,7 @@ ParameterDeclaration
 StatementBlock: "<" StatementList ">";
 
 StatementList: %empty
-    | Statement StatementList
+    | StatementList Statement
     ;
 
 Statement: "."
@@ -155,7 +155,7 @@ VariableDefinition: TypeSpecifier VariableDeclarartionList;
 
 VariableDeclarartionList
     : VariableDeclarartion
-    | VariableDeclarartion "," VariableDeclarartionList
+    | VariableDeclarartionList "," VariableDeclarartion
     ;
 
 VariableDeclarartion
@@ -177,9 +177,9 @@ ElseIfList: %empty
 CaseStatementBlock: "<" CaseStatementList ">";
 
 CaseStatementList: %empty
-    | CASE Expression ":" CaseStatementList
-    | DEFAULT ":" CaseStatementList
-    | Statement CaseStatementList
+    | CaseStatementList CASE Expression ":"
+    | CaseStatementList DEFAULT ":"
+    | CaseStatementList Statement
     ;
 
 IterationStatement
