@@ -4,10 +4,14 @@ location.hpp
 parser.hpp
 parser.cpp
 scanner.cpp
-parser
-scanner
 
-token*
+compile
+parse
+scan
+
+tokens.txt
+ast.txt
+out.asm
 
 *.tmp
 *.docx

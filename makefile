@@ -1,13 +1,24 @@
-all: parser scanner
+.DEFAULT_GOAL := compiler
 
-headers = parser.hpp scanner.hpp driver.hpp location.hpp
-sources = parser.cpp scanner.cpp driver.cpp main.cpp
+headers = parser.hpp scanner.hpp driver.hpp location.hpp ast.hpp translation.hpp
+sources = parser.cpp scanner.cpp driver.cpp main.cpp ast.cpp codegen.cpp translation.cpp
 
-parser: $(headers) $(sources)
-	g++ $(sources) -o parser -Wall -lm -g
+.PHONY : all compiler parser scanner clean
+
+all: compiler parser scanner
+
+compiler: compile
+parser: parse
+scanner: scan
 	
-scanner: $(headers) $(sources)
-	g++ $(sources) -o scanner -Wall -lm -g -D _SCAN_ONLY
+compile: $(headers) $(sources)
+	g++ $(sources) -o compile -Wall -lm -g -std=c++17
+
+parse: $(headers) $(sources)
+	g++ $(sources) -o parse -Wall -lm -g -std=c++17 -D _PARSE_ONLY
+	
+scan: $(headers) $(sources)
+	g++ $(sources) -o scan -Wall -lm -g -std=c++17 -D _SCAN_ONLY
 
 parser.cpp parser.hpp location.hpp: parser.y driver.hpp
 	bison -o parser.cpp parser.y --defines=parser.hpp -Wall
@@ -15,6 +26,5 @@ parser.cpp parser.hpp location.hpp: parser.y driver.hpp
 scanner.cpp: scanner.l scanner.hpp parser.hpp location.hpp
 	flex -o scanner.cpp scanner.l
 
-.PHONY : clean
 clean:
-	rm -f scanner.cpp parser.hpp parser.cpp location.hpp parser scanner token*
+	rm -f scanner.cpp parser.hpp parser.cpp location.hpp parse scan compile tokens.txt ast.txt out.asm

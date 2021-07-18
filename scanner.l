@@ -26,12 +26,39 @@
             throw yy::parser::syntax_error(loc, "integer is out of range: " + str);
         }
     }
+
+    const std::map<string, char> escapes = {
+        {"\\a", '\a'}, {"\\b", '\b'}, {"\\e", '\e'}, {"\\f", '\f'}, {"\\n", '\n'}, {"\\r", '\r'},
+        {"\\t", '\t'}, {"\\v", '\v'}, {"\\\\", '\\'}, {"\\'", '\''}, {"\"", '"'}
+    };
+    
+    // convert the value in str to a character constant symbol
+    static yy::parser::symbol_type make_CHAR_CONST(const std::string &str, const yy::parser::location_type& loc)
+    {
+        std::string escaped = str.substr(1, str.size() - 2);
+        char value;
+        if (escaped.size() == 1)
+            value = escaped[0];
+        else
+            value = escapes.at(escaped);
+
+        return yy::parser::make_CHAR_CONST(value, loc);
+    }
+    
+    // convert the value in str to a character constant symbol
+    static yy::parser::symbol_type make_STRING_CONST(const std::string &str, const yy::parser::location_type& loc)
+    {
+        std::string escaped = str.substr(1, str.size() - 2);
+
+        return yy::parser::make_STRING_CONST(escaped, loc);
+    }
 %}
 
 /* define regex rules */
 identifier  [_a-zA-Z][_a-zA-Z0-9]*
-intconst   [0-9]+
-charconst  '.'
+intconst    [0-9]+
+charconst   '.'|'\\[abefnrtv\\'\"]'
+stringconst \"([^\\\"\n]|\\[abefnrtv\\'\"])*\"
 blank       [ \t\r]
 
 %{
@@ -103,8 +130,9 @@ void        { tokens_out << "TOKEN_VOID\n";         return yy::parser::make_VOID
 main        { tokens_out << "TOKEN_MAIN\n";         return yy::parser::make_MAIN(loc);         }
 
  /* constants */
-{intconst}  { tokens_out << "TOKEN_INT_CONST\n";        return make_INT_CONST(yytext, loc); }
-{charconst} { tokens_out << "TOKEN_CHAR_CONST\n";       return yy::parser::make_CHAR_CONST(yytext[1], loc); }
+{intconst}      { tokens_out << "TOKEN_INT_CONST\n";    return make_INT_CONST(yytext, loc); }
+{charconst}     { tokens_out << "TOKEN_CHAR_CONST\n";   return make_CHAR_CONST(yytext, loc); }
+{stringconst}   { tokens_out << "TOKEN_STRING_CONST\n"; return make_STRING_CONST(yytext, loc); }
 
  /* identifier */
 {identifier}    { tokens_out << "TOKEN_IDENTIFIER\n";   return yy::parser::make_IDENTIFIER(yytext, loc); }
@@ -129,11 +157,11 @@ main        { tokens_out << "TOKEN_MAIN\n";         return yy::parser::make_MAIN
 %%
 
 // initialize the Scanner instance
-Scanner::Scanner(const std::string& filename, const std::string& tokens_out_filename, bool trace_scanning)
-    : filename(filename), tokens_out_filename(tokens_out_filename), trace_scanning(trace_scanning)
+Scanner::Scanner(const std::string& filename, std::string& friendly_filename,
+    const std::string& tokens_out_filename, bool trace_scanning)
+    : tokens_out_filename(tokens_out_filename), trace_scanning(trace_scanning)
 {
-    // filename to print for error reporting
-    friendly_filename = filename.empty() ?  "standard input" : filename;
+    // friendly filename to print for error reporting
     this->location.initialize(&friendly_filename);
 
     // hold this instance as the current scanner

@@ -2,6 +2,7 @@
 
 #include <string>
 #include "parser.hpp"
+#include "ast.hpp"
 
 // define the yylex function for the scanner and parser
 #define YY_DECL yy::parser::symbol_type yylex(Driver& driver)
@@ -18,12 +19,20 @@ public:
     bool trace_parsing = false;
 
     std::string input_filename;
-    std::string tokens_out_filename = "tokens.txt";
+    std::string friendly_filename;
+    std::string tokens_filename = "tokens.txt";
+    std::string ast_filename = "ast.txt";
+    std::string program_filename = "out.asm";
 
-    int parse();
+    shared_ptr<Program> ast;
 
-    int scan();
+    int Parse();
+
+    int Scan();
+
+    int Compile();
 
     // this method is called whenever a syntax error occurs in the parser or in the scanner
-    void print_error(const yy::parser::location_type& location, const std::string& message);
+    static void PrintError(const yy::parser::location_type& location,
+        const std::string& message, const std::string& type = "error");
 };
