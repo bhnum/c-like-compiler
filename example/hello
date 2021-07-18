@@ -1,0 +1,11 @@
+
+char hello[] = "Hello,\tworld!\n".
+
+void main()
+<
+    print_string(hello).
+
+    char input[100].
+    read_string(input, 100).
+    print_string(input).
+>

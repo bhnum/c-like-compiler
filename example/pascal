@@ -1,0 +1,17 @@
+
+int main()
+<
+    int n = read_int().
+    for (int i = 1. i <= n. i = i + 1)
+    <
+        int c = 1.
+        for (int j = 1. j <= i. j = j + 1)
+        <
+            print_int(c).
+            print_char(' ').
+            c = c * (i - j) / j.
+        >
+        print_char('\n').
+    >
+    return 0.
+>

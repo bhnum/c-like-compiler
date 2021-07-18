@@ -1,0 +1,29 @@
+
+char oneof[] = "one of abcd\n", alsoe[] = "also e\n", noneof[] = "x or none of \\n or abcdey".
+
+void main()
+<
+    int n = read_char().
+    print_char('\n').
+
+    switch (n)
+    <
+        case 'a':
+        case 'b':
+        case 'c':
+        case 'd':
+            print_string(oneof).
+        case 'e':
+            print_string(alsoe).
+            break.
+
+        case 'x':
+        default:
+            print_string(noneof).
+            break.
+
+        case 'y':
+            print_char('y').
+            print_char('\n').
+    >
+>
