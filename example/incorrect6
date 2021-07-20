@@ -1,0 +1,15 @@
+
+int a.
+
+void f()
+<
+    $$a = 4.
+    < a = 4. >
+    int a.
+    < int a. >
+>
+
+int main()
+<
+    return 0.
+>
