@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
         {
             i++;
             if (i < argc)
-                driver.program_filename = argv[i];
+                driver.ast_filename = argv[i];
             else
             {
                 std::cerr << "Missing filename for argument -a" << std::endl;
@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
         {
             i++;
             if (i < argc)
-                driver.ast_filename = argv[i];
+                driver.program_filename = argv[i];
             else
             {
                 std::cerr << "Missing filename for argument -o" << std::endl;
