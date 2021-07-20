@@ -5,7 +5,7 @@
 using SyntaxError = yy::parser::syntax_error;
 
 
-bool UnaryIntegralExpression::Precomputable(int& result)
+bool UnaryValueExpression::Precomputable(int& result)
 {
     int a;
     if (exp->Precomputable(a))
@@ -22,7 +22,7 @@ bool UnaryIntegralExpression::Precomputable(int& result)
 }
 
 
-bool BinaryIntegralExpression::Precomputable(int& result)
+bool BinaryValueExpression::Precomputable(int& result)
 {
     int a, b;
     if (exp1->Precomputable(a) && exp2->Precomputable(b))
@@ -52,21 +52,21 @@ bool BinaryIntegralExpression::Precomputable(int& result)
 
 
 FunctionCallExpression::FunctionCallExpression(const string& name, const vector<shared_ptr<Expression>>& args, const Location& loc)
-    : IntegralExpression(loc), name(name)
+    : ValueExpression(loc), name(name)
 {
     if (args.size() > 4)
         throw SyntaxError(args[4]->location + args.rbegin()->get()->location,
             "more that 4 arguments cannot be passed in a function call");
     
-    std::transform(args.begin(), args.end(), std::back_inserter(this->args), IntegralCast::IfNeeded);
+    std::transform(args.begin(), args.end(), std::back_inserter(this->args), ValueCast::IfNeeded);
 }
 
 
 void SwitchStatement::AddCase(shared_ptr<Expression> value_exp, const Location& loc)
 {
-    auto integral = IntegralCast::IfNeeded(value_exp);
+    auto casted = ValueCast::IfNeeded(value_exp);
     int value;
-    if (!integral->Precomputable(value))
+    if (!casted->Precomputable(value))
         throw SyntaxError(loc, "case value must be a compile-time constant expression");
 
     if (std::find_if(case_values.begin(), case_values.end(),
@@ -101,8 +101,8 @@ FieldDefinition::FieldDefinition(const string& name, shared_ptr<SymbolType> type
 {
     if (is_value_type(type))
     {
-        auto integral = IntegralCast::IfNeeded(exp);
-        if (!integral->Precomputable(value))
+        auto casted = ValueCast::IfNeeded(exp);
+        if (!casted->Precomputable(value))
             throw SyntaxError(this->location, "value assigned to a global variable must be a constant expression");
     }
     else if (is_array_type(type) && *as_array_type(type)->underlying_type == *char_type)

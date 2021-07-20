@@ -29,10 +29,10 @@ public:
 };
 
 
-class IntegralExpression : public Expression
+class ValueExpression : public Expression
 {
 public:
-    IntegralExpression(const Location& loc) : Expression(loc) {}
+    ValueExpression(const Location& loc) : Expression(loc) {}
 
     virtual bool Precomputable(int& result)
     {
@@ -48,10 +48,10 @@ public:
 };
 
 
-class LogicalExpression : public Expression
+class BooleanExpression : public Expression
 {
 public:
-    LogicalExpression(const Location& loc) : Expression(loc) {}
+    BooleanExpression(const Location& loc) : Expression(loc) {}
     
     virtual Code Compile(LocalContext& ctx)
     {
@@ -64,48 +64,48 @@ public:
 };
 
 
-class IntegralCast : public IntegralExpression
+class ValueCast : public ValueExpression
 {
 public:
-    IntegralCast(shared_ptr<LogicalExpression> exp)
-        : IntegralExpression(exp->location), exp(exp) {}
+    ValueCast(shared_ptr<BooleanExpression> exp)
+        : ValueExpression(exp->location), exp(exp) {}
     
-    shared_ptr<LogicalExpression> exp;
+    shared_ptr<BooleanExpression> exp;
     
     virtual std::pair<Code, shared_ptr<Symbol>> Evaluate(ExpressionContext& ctx);
 
-    static shared_ptr<IntegralExpression> IfNeeded(shared_ptr<Expression> exp)
+    static shared_ptr<ValueExpression> IfNeeded(shared_ptr<Expression> exp)
     {
-        if (auto integral = std::dynamic_pointer_cast<IntegralExpression>(exp))
-            return integral;
-        if (auto logical = std::dynamic_pointer_cast<LogicalExpression>(exp))
-            return std::make_shared<IntegralCast>(logical);
+        if (auto value = std::dynamic_pointer_cast<ValueExpression>(exp))
+            return value;
+        if (auto boolean = std::dynamic_pointer_cast<BooleanExpression>(exp))
+            return std::make_shared<ValueCast>(boolean);
         assert(false);  // must not happen
     }
 
     virtual string Tree(int indent = 0)
     {
-        return string(indent, ' ') + "cast to int\n" + exp->Tree(indent + indent_length);
+        return string(indent, ' ') + "cast to value\n" + exp->Tree(indent + indent_length);
     }
 };
 
 
-class LogicalCast : public LogicalExpression
+class BooleanCast : public BooleanExpression
 {
 public:
-    LogicalCast(shared_ptr<IntegralExpression> exp)
-        : LogicalExpression(exp->location), exp(exp) {}
+    BooleanCast(shared_ptr<ValueExpression> exp)
+        : BooleanExpression(exp->location), exp(exp) {}
     
-    shared_ptr<IntegralExpression> exp;
+    shared_ptr<ValueExpression> exp;
     
     virtual Code Evaluate(ExpressionContext& ctx, const string& true_label, const string& false_label);
 
-    static shared_ptr<LogicalExpression> IfNeeded(shared_ptr<Expression> exp)
+    static shared_ptr<BooleanExpression> IfNeeded(shared_ptr<Expression> exp)
     {
-        if (auto logical = std::dynamic_pointer_cast<LogicalExpression>(exp))
-            return logical;
-        if (auto integral = std::dynamic_pointer_cast<IntegralExpression>(exp))
-            return std::make_shared<LogicalCast>(integral);
+        if (auto boolean = std::dynamic_pointer_cast<BooleanExpression>(exp))
+            return boolean;
+        if (auto value = std::dynamic_pointer_cast<ValueExpression>(exp))
+            return std::make_shared<BooleanCast>(value);
         assert(false);  // must not happen
     }
 
@@ -116,17 +116,17 @@ public:
 };
 
 
-class UnaryIntegralExpression : public IntegralExpression
+class UnaryValueExpression : public ValueExpression
 {
 public:
-    UnaryIntegralExpression(const string& op, shared_ptr<Expression> exp, const Location& loc)
-        : IntegralExpression(loc + exp->location), exp(IntegralCast::IfNeeded(exp)), op(op)
+    UnaryValueExpression(const string& op, shared_ptr<Expression> exp, const Location& loc)
+        : ValueExpression(loc + exp->location), exp(ValueCast::IfNeeded(exp)), op(op)
     {
         if (op != "+" && op != "-" && op != "~")
             throw std::domain_error("invalid operator");
     }
 
-    shared_ptr<IntegralExpression> exp;
+    shared_ptr<ValueExpression> exp;
     string op;
 
     virtual bool Precomputable(int& result);
@@ -144,18 +144,18 @@ private:
 };
 
 
-class BinaryIntegralExpression : public IntegralExpression
+class BinaryValueExpression : public ValueExpression
 {
 public:
-    BinaryIntegralExpression(const string& op, shared_ptr<Expression> exp1, shared_ptr<Expression> exp2)
-        : IntegralExpression(exp1->location + exp2->location),
-        exp1(IntegralCast::IfNeeded(exp1)), exp2(IntegralCast::IfNeeded(exp2)), op(op)
+    BinaryValueExpression(const string& op, shared_ptr<Expression> exp1, shared_ptr<Expression> exp2)
+        : ValueExpression(exp1->location + exp2->location),
+        exp1(ValueCast::IfNeeded(exp1)), exp2(ValueCast::IfNeeded(exp2)), op(op)
     {
         if (op != "+" && op != "-" && op != "*" && op != "/" && op != "&" && op != "|" && op != "^")
             throw std::domain_error("invalid operator");
     }
 
-    shared_ptr<IntegralExpression> exp1, exp2;
+    shared_ptr<ValueExpression> exp1, exp2;
     string op;
     
     virtual bool Precomputable(int& result);
@@ -174,11 +174,11 @@ private:
 };
 
 
-class ConstantExpression : public IntegralExpression
+class ConstantExpression : public ValueExpression
 {
 public:
     ConstantExpression(int value, const Location& loc)
-        : IntegralExpression(loc), value(value) {}
+        : ValueExpression(loc), value(value) {}
 
     int value;
     
@@ -222,10 +222,10 @@ public:
 };
 
 
-class LValueExpression : public IntegralExpression
+class LValueExpression : public ValueExpression
 {
 public:
-    LValueExpression(const Location& loc) : IntegralExpression(loc) {}
+    LValueExpression(const Location& loc) : ValueExpression(loc) {}
 
     virtual Code Assign(ExpressionContext& ctx, shared_ptr<Symbol> value) { assert(false); }
 };
@@ -263,10 +263,10 @@ class ArrayAccessExpression : public LValueExpression
 {
 public:
     ArrayAccessExpression(const string& name, shared_ptr<Expression> index, const Location& loc)
-        : LValueExpression(loc), name(name), index(IntegralCast::IfNeeded(index)) {}
+        : LValueExpression(loc), name(name), index(ValueCast::IfNeeded(index)) {}
 
     string name;
-    shared_ptr<IntegralExpression> index;
+    shared_ptr<ValueExpression> index;
     
     virtual std::pair<Code, shared_ptr<Symbol>> Evaluate(ExpressionContext& ctx);
     
@@ -284,14 +284,14 @@ public:
 };
 
 
-class AssignmentExpression : public IntegralExpression
+class AssignmentExpression : public ValueExpression
 {
 public:
     AssignmentExpression(shared_ptr<LValueExpression> left, shared_ptr<Expression> exp)
-        : IntegralExpression(left->location + exp->location), left(left), exp(IntegralCast::IfNeeded(exp)) {}
+        : ValueExpression(left->location + exp->location), left(left), exp(ValueCast::IfNeeded(exp)) {}
     
     shared_ptr<LValueExpression> left;
-    shared_ptr<IntegralExpression> exp;
+    shared_ptr<ValueExpression> exp;
     
     virtual std::pair<Code, shared_ptr<Symbol>> Evaluate(ExpressionContext& ctx);
 
@@ -303,13 +303,13 @@ public:
 };
 
 
-class FunctionCallExpression : public IntegralExpression
+class FunctionCallExpression : public ValueExpression
 {
 public:
     FunctionCallExpression(const string& name, const vector<shared_ptr<Expression>>& args, const Location& loc);
 
     string name;
-    vector<shared_ptr<IntegralExpression>> args;
+    vector<shared_ptr<ValueExpression>> args;
     
     virtual std::pair<Code, shared_ptr<Symbol>> Evaluate(ExpressionContext& ctx);
 
@@ -324,17 +324,17 @@ public:
 };
 
 
-class UnaryLogicalExpression : public LogicalExpression
+class UnaryBooleanExpression : public BooleanExpression
 {
 public:
-    UnaryLogicalExpression(const string& op, shared_ptr<Expression> exp, const Location& loc)
-        : LogicalExpression(loc + exp->location), exp(LogicalCast::IfNeeded(exp)), op(op)
+    UnaryBooleanExpression(const string& op, shared_ptr<Expression> exp, const Location& loc)
+        : BooleanExpression(loc + exp->location), exp(BooleanCast::IfNeeded(exp)), op(op)
     {
         if (op != "!")
             throw std::domain_error("invalid operator");
     }
 
-    shared_ptr<LogicalExpression> exp;
+    shared_ptr<BooleanExpression> exp;
     string op;
     
     virtual Code Evaluate(ExpressionContext& ctx, const string& true_label, const string& false_label);
@@ -346,18 +346,18 @@ public:
 };
 
 
-class BinaryLogicalExpression : public LogicalExpression
+class BinaryBooleanExpression : public BooleanExpression
 {
 public:
-    BinaryLogicalExpression(const string& op, shared_ptr<Expression> exp1, shared_ptr<Expression> exp2)
-        : LogicalExpression(exp1->location + exp2->location), 
-        exp1(LogicalCast::IfNeeded(exp1)), exp2(LogicalCast::IfNeeded(exp2)), op(op)
+    BinaryBooleanExpression(const string& op, shared_ptr<Expression> exp1, shared_ptr<Expression> exp2)
+        : BooleanExpression(exp1->location + exp2->location), 
+        exp1(BooleanCast::IfNeeded(exp1)), exp2(BooleanCast::IfNeeded(exp2)), op(op)
     {
         if (op != "&&" && op != "||")
             throw std::domain_error("invalid operator");
     }
 
-    shared_ptr<LogicalExpression> exp1, exp2;
+    shared_ptr<BooleanExpression> exp1, exp2;
     string op;
     
     virtual Code Evaluate(ExpressionContext& ctx, const string& true_label, const string& false_label);
@@ -370,18 +370,18 @@ public:
 };
 
 
-class RelationalExpression : public LogicalExpression
+class RelationalExpression : public BooleanExpression
 {
 public:
     RelationalExpression(const string& op, shared_ptr<Expression> exp1, shared_ptr<Expression> exp2)
-        : LogicalExpression(exp1->location + exp2->location), 
-        exp1(IntegralCast::IfNeeded(exp1)), exp2(IntegralCast::IfNeeded(exp2)), op(op)
+        : BooleanExpression(exp1->location + exp2->location), 
+        exp1(ValueCast::IfNeeded(exp1)), exp2(ValueCast::IfNeeded(exp2)), op(op)
     {
         if (op != "==" && op != "!=" && op != "<=" && op != ">=" && op != "<" && op != ">")
             throw std::domain_error("invalid operator");
     }
 
-    shared_ptr<IntegralExpression> exp1, exp2;
+    shared_ptr<ValueExpression> exp1, exp2;
     string op;
     
     virtual Code Evaluate(ExpressionContext& ctx, const string& true_label, const string& false_label);
@@ -457,9 +457,9 @@ public:
     ReturnStatement(const Location& loc) : JumpStatement(loc) {}
 
     ReturnStatement(shared_ptr<Expression> exp, const Location& loc)
-        : JumpStatement(loc), exp(IntegralCast::IfNeeded(exp)) {}
+        : JumpStatement(loc), exp(ValueCast::IfNeeded(exp)) {}
 
-    shared_ptr<IntegralExpression> exp = nullptr; // could be null!
+    shared_ptr<ValueExpression> exp = nullptr; // could be null!
 
     virtual Code Compile(LocalContext& ctx);
 
@@ -523,10 +523,10 @@ class IfElseStatement : public Statement
 public:
     IfElseStatement(shared_ptr<Expression> condition, shared_ptr<StatementBlock> then_block,
         shared_ptr<StatementBlock> else_block, const Location& loc)
-        : Statement(loc), condition(LogicalCast::IfNeeded(condition)),
+        : Statement(loc), condition(BooleanCast::IfNeeded(condition)),
         then_block(then_block), else_block(else_block) {}
 
-    shared_ptr<LogicalExpression> condition;
+    shared_ptr<BooleanExpression> condition;
     shared_ptr<StatementBlock> then_block, else_block;
 
     virtual Code Compile(LocalContext& ctx);
@@ -550,7 +550,7 @@ class SwitchStatement : public Statement
 public:
     SwitchStatement(const Location& loc) : Statement(loc) {}
     
-    shared_ptr<IntegralExpression> exp;
+    shared_ptr<ValueExpression> exp;
     vector<shared_ptr<int>> case_values;
     vector<vector<shared_ptr<Statement>>> case_bodies;
 
@@ -562,7 +562,7 @@ public:
 
     void SetExpression(shared_ptr<Expression> exp)
     {
-        this->exp = IntegralCast::IfNeeded(exp);
+        this->exp = ValueCast::IfNeeded(exp);
     }
     
     virtual Code Compile(LocalContext& parent_ctx);
@@ -588,9 +588,9 @@ class WhileStatement : public Statement
 {
 public:
     WhileStatement(shared_ptr<Expression> condition, shared_ptr<StatementBlock> body, const Location& loc)
-        : Statement(loc), condition(LogicalCast::IfNeeded(condition)), body(body) {}
+        : Statement(loc), condition(BooleanCast::IfNeeded(condition)), body(body) {}
 
-    shared_ptr<LogicalExpression> condition;
+    shared_ptr<BooleanExpression> condition;
     shared_ptr<StatementBlock> body;
 
     virtual Code Compile(LocalContext& ctx);
@@ -614,10 +614,10 @@ public:
         shared_ptr<Expression> condition, shared_ptr<Expression> step,
         shared_ptr<StatementBlock> body, const Location& loc)
         : Statement(loc + body->location), initializer(initializer),
-        condition(LogicalCast::IfNeeded(condition)), step(step), body(body) {}
+        condition(BooleanCast::IfNeeded(condition)), step(step), body(body) {}
 
     vector<shared_ptr<Statement>> initializer;
-    shared_ptr<LogicalExpression> condition;
+    shared_ptr<BooleanExpression> condition;
     shared_ptr<Expression> step;
     shared_ptr<StatementBlock> body;
 

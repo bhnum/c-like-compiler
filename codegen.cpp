@@ -4,7 +4,7 @@
 #include <sstream>
 
 
-std::pair<Code, shared_ptr<Symbol>> IntegralCast::Evaluate(ExpressionContext& ctx)
+std::pair<Code, shared_ptr<Symbol>> ValueCast::Evaluate(ExpressionContext& ctx)
 {
     string set_label = ctx.local_context.global_context.NewLabel(),
         clear_label = ctx.local_context.global_context.NewLabel(),
@@ -22,7 +22,7 @@ std::pair<Code, shared_ptr<Symbol>> IntegralCast::Evaluate(ExpressionContext& ct
     return std::make_pair(code, symbol);
 };
 
-Code LogicalCast::Evaluate(ExpressionContext& ctx, const string& true_label, const string& false_label)
+Code BooleanCast::Evaluate(ExpressionContext& ctx, const string& true_label, const string& false_label)
 {
     ExpressionContext inner = ctx;
     auto [code, symbol] = exp->Evaluate(inner);
@@ -33,7 +33,7 @@ Code LogicalCast::Evaluate(ExpressionContext& ctx, const string& true_label, con
     return code;
 };
 
-std::pair<Code, shared_ptr<Symbol>> UnaryIntegralExpression::Evaluate(ExpressionContext& ctx)
+std::pair<Code, shared_ptr<Symbol>> UnaryValueExpression::Evaluate(ExpressionContext& ctx)
 {
     ExpressionContext inner = ctx;
     auto [code, symbol0] = exp->Evaluate(inner);
@@ -46,7 +46,7 @@ std::pair<Code, shared_ptr<Symbol>> UnaryIntegralExpression::Evaluate(Expression
     return std::make_pair(code, symbol);
 }
 
-std::pair<Code, shared_ptr<Symbol>> BinaryIntegralExpression::Evaluate(ExpressionContext& ctx)
+std::pair<Code, shared_ptr<Symbol>> BinaryValueExpression::Evaluate(ExpressionContext& ctx)
 {
     // warn about division by zero
     int den;
@@ -212,12 +212,12 @@ std::pair<Code, shared_ptr<Symbol>> FunctionCallExpression::Evaluate(ExpressionC
     return std::make_pair(code, result);
 }
 
-Code UnaryLogicalExpression::Evaluate(ExpressionContext& ctx, const string& true_label, const string& false_label)
+Code UnaryBooleanExpression::Evaluate(ExpressionContext& ctx, const string& true_label, const string& false_label)
 {
     return exp->Evaluate(ctx, false_label, true_label);
 }
 
-Code BinaryLogicalExpression::Evaluate(ExpressionContext& ctx, const string& true_label, const string& false_label)
+Code BinaryBooleanExpression::Evaluate(ExpressionContext& ctx, const string& true_label, const string& false_label)
 {
     string inner_label = ctx.local_context.global_context.NewLabel();
 

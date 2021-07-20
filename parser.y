@@ -267,16 +267,16 @@ VariableDeclaration
     | IDENTIFIER "=" Expression { $$ = { .name = $1, .value = $3, .location = @1 + @3}; }
     | IDENTIFIER "[" Expression "]" {
             $$ = { .name = $1, .array = true, .location = @1 + @4};
-            auto integral = IntegralCast::IfNeeded($3);
-            if (!integral->Precomputable($$.array_size))
+            auto casted = ValueCast::IfNeeded($3);
+            if (!casted->Precomputable($$.array_size))
                 throw yy::parser::syntax_error($3->location, "array size must be a constant expression");
             if ($$.array_size <= 0)
                 throw yy::parser::syntax_error($3->location, "array size cannot be negative or zero");
         }
     | IDENTIFIER "[" Expression "]" "=" STRING_CONST {
             $$ = { .name = $1, .array = true, .value = std::make_shared<StringLiteral>($6, @6), .location = @1 + @4};
-            auto integral = IntegralCast::IfNeeded($3);
-            if (!integral->Precomputable($$.array_size))
+            auto casted = ValueCast::IfNeeded($3);
+            if (!casted->Precomputable($$.array_size))
                 throw yy::parser::syntax_error($3->location, "array size must be a constant expression");
             if ($$.array_size <= 0)
                 throw yy::parser::syntax_error($3->location, "array size cannot be negative or zero");
@@ -350,21 +350,21 @@ Expression
     | ArrayAccess { $$ = $1; }
     | FunctionCall { $$ = $1; }
 
-    | Expression "+" Expression { $$ = std::make_shared<BinaryIntegralExpression>("+", $1, $3); }
-    | Expression "-" Expression { $$ = std::make_shared<BinaryIntegralExpression>("-", $1, $3); }
-    | Expression "*" Expression { $$ = std::make_shared<BinaryIntegralExpression>("*", $1, $3); }
-    | Expression "/" Expression { $$ = std::make_shared<BinaryIntegralExpression>("/", $1, $3); }
-    | "+" Expression %prec UnaryPlus { $$ = std::make_shared<UnaryIntegralExpression>("+", $2, @1); }
-    | "-" Expression %prec UnaryMinus { $$ = std::make_shared<UnaryIntegralExpression>("-", $2, @1); }
+    | Expression "+" Expression { $$ = std::make_shared<BinaryValueExpression>("+", $1, $3); }
+    | Expression "-" Expression { $$ = std::make_shared<BinaryValueExpression>("-", $1, $3); }
+    | Expression "*" Expression { $$ = std::make_shared<BinaryValueExpression>("*", $1, $3); }
+    | Expression "/" Expression { $$ = std::make_shared<BinaryValueExpression>("/", $1, $3); }
+    | "+" Expression %prec UnaryPlus { $$ = std::make_shared<UnaryValueExpression>("+", $2, @1); }
+    | "-" Expression %prec UnaryMinus { $$ = std::make_shared<UnaryValueExpression>("-", $2, @1); }
 
-    | Expression "&" Expression { $$ = std::make_shared<BinaryIntegralExpression>("&", $1, $3); }
-    | Expression "|" Expression { $$ = std::make_shared<BinaryIntegralExpression>("|", $1, $3); }
-    | Expression "^" Expression { $$ = std::make_shared<BinaryIntegralExpression>("^", $1, $3); }
-    | "~" Expression { $$ = std::make_shared<UnaryIntegralExpression>("~", $2, @1); }
+    | Expression "&" Expression { $$ = std::make_shared<BinaryValueExpression>("&", $1, $3); }
+    | Expression "|" Expression { $$ = std::make_shared<BinaryValueExpression>("|", $1, $3); }
+    | Expression "^" Expression { $$ = std::make_shared<BinaryValueExpression>("^", $1, $3); }
+    | "~" Expression { $$ = std::make_shared<UnaryValueExpression>("~", $2, @1); }
 
-    | Expression "&&" Expression { $$ = std::make_shared<BinaryLogicalExpression>("&&", $1, $3); }
-    | Expression "||" Expression { $$ = std::make_shared<BinaryLogicalExpression>("||", $1, $3); }
-    | "!" Expression { $$ = std::make_shared<UnaryLogicalExpression>("!", $2, @1); }
+    | Expression "&&" Expression { $$ = std::make_shared<BinaryBooleanExpression>("&&", $1, $3); }
+    | Expression "||" Expression { $$ = std::make_shared<BinaryBooleanExpression>("||", $1, $3); }
+    | "!" Expression { $$ = std::make_shared<UnaryBooleanExpression>("!", $2, @1); }
 
     | Expression "==" Expression { $$ = std::make_shared<RelationalExpression>("==", $1, $3); }
     | Expression "!=" Expression { $$ = std::make_shared<RelationalExpression>("!=", $1, $3); }
