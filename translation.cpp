@@ -213,7 +213,8 @@ shared_ptr<Symbol> GlobalContext::operator[](const string& name) const
 
 void FunctionContext::DeclareParameter(const string& name, shared_ptr<SymbolType> type, const Location& loc)
 {
-    if (std::find_if(symbols.begin(), symbols.end(), [&name](auto s) { return s->name == name; }) != symbols.end())
+    if (std::find_if(symbols.begin(), symbols.end(),
+        [&name](auto s) { return s->name == name; }) != symbols.end())
         throw CompileError(loc, "redeclaration of function parameter \"" + name + "\"");
     symbols.push_back(std::make_shared<VariableSymbol>(name, type, context_depth, stack_depth, loc));
 
@@ -231,8 +232,20 @@ shared_ptr<Symbol> FunctionContext::operator[](const string& name) const
 
 void LocalContext::DeclareVariable(const string& name, shared_ptr<SymbolType> type, const Location& loc)
 {
-    if (std::find_if(symbols.begin(), symbols.end(), [&name](auto s) { return s->name == name; }) != symbols.end())
+    if (std::find_if(symbols.begin(), symbols.end(),
+        [&name](auto s) { return s->name == name; }) != symbols.end())
         throw CompileError(loc, "redeclaration of local variable \"" + name + "\"");
+
+    if (previous_context == nullptr)
+        // also look in function paramters
+        if (std::find_if(function_context.symbols.begin(), function_context.symbols.end(),
+            [&name](auto s) { return s->name == name; }) != function_context.symbols.end())
+            throw CompileError(loc, "redeclaration of local variable \"" + name + "\"");
+
+    if (std::find_if(referenced_symbols.begin(), referenced_symbols.end(),
+        [&name](auto s) { return s->name == name; }) != referenced_symbols.end())
+        throw CompileError(loc, "variable \"" + name + "\" is referenced before declaration");
+
     int stack_offset = CumulativeDepth() +
         type->AllignedWidth(function_context.stack_alignment) - function_context.stack_alignment;
     symbols.push_back(std::make_shared<VariableSymbol>(name, type, stack_offset, function_context.stack_depth, loc));
@@ -241,14 +254,18 @@ void LocalContext::DeclareVariable(const string& name, shared_ptr<SymbolType> ty
     UpdateStackDepth();
 }
 
-shared_ptr<Symbol> LocalContext::operator[](const string& name) const
+shared_ptr<Symbol> LocalContext::operator[](const string& name)
 {
+    shared_ptr<Symbol> result;
     auto it = std::find_if(symbols.begin(), symbols.end(), [&name](auto s) { return s->name == name; });
     if (it != symbols.end())
-        return *it;
-    if (previous_context != nullptr)
-        return (*previous_context)[name];
-    return function_context[name];
+        result = *it;
+    else if (previous_context != nullptr)
+        result = (*previous_context)[name];
+    else
+        result = function_context[name];
+    referenced_symbols.insert(result);
+    return result;
 }
 
 shared_ptr<VariableSymbol> ExpressionContext::NewTemp(shared_ptr<SymbolType> type, const Location& loc)

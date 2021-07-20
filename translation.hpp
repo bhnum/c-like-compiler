@@ -4,12 +4,13 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 #include <memory>
 #include <cassert>
 #include <variant>
 #include <functional>
 
-using std::string, std::vector, std::map;
+using std::string, std::vector, std::map, std::set;
 using std::shared_ptr, std::variant, std::function;
 
 #include "location.hpp"
@@ -464,7 +465,7 @@ public:
 
     void DeclareVariable(const string& name, shared_ptr<SymbolType> type, const Location& loc);
 
-    shared_ptr<Symbol> operator[](const string& name) const;
+    shared_ptr<Symbol> operator[](const string& name);
 
     void UpdateStackDepth(int depth = 0)
     {
@@ -488,6 +489,7 @@ public:
     
     int context_depth = 0;
     vector<shared_ptr<VariableSymbol>> symbols;
+    set<shared_ptr<Symbol>> referenced_symbols;
 
     string break_label;
     string LastBreakLabel()
